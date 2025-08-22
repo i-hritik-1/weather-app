@@ -96,7 +96,7 @@ body {
     opacity: 0.8;
 }
 
-#currentTemp {
+#currentTemp, #dayDetailTemp {
     font-size: 72px;
     font-weight: 300;
     line-height: 1;
@@ -126,6 +126,60 @@ body {
     border-radius: 50%;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.weather-icon-bg {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sun-part {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    border-radius: 50%;
+    right: 5px;
+    top: 5px;
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+}
+
+.cloud-part {
+    position: absolute;
+    width: 40px;
+    height: 25px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 25px;
+    left: 5px;
+    bottom: 10px;
+}
+
+.cloud-part::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    top: -8px;
+    left: 8px;
+}
+
+.cloud-part::after {
+    content: '';
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    top: -6px;
+    right: 8px;
 }
 
 .weather-details {
@@ -158,8 +212,8 @@ body {
 .date-time {
     background: rgba(231, 76, 60, 0.9);
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 12px 20px;
+    border-radius: 25px;
     font-size: 14px;
     font-weight: 500;
     text-align: center;
@@ -190,6 +244,7 @@ body {
 .forecast-day:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .forecast-icon {
@@ -343,12 +398,108 @@ body {
     opacity: 1;
     transform: translateX(-2px);
 }
+
+/* Day Detail View Styles */
+.day-detail-view {
+    position: relative;
+    z-index: 1;
+}
+
+.day-details-section {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 25px;
+    position: relative;
+    z-index: 1;
+}
+
+.day-details-section h3 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-icon {
+    font-size: 20px;
+    width: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.detail-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.detail-label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.detail-value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Weather Icons for Different Conditions */
+.weather-icon.sunny .sun-part {
+    width: 45px;
+    height: 45px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.weather-icon.sunny .cloud-part {
+    display: none;
+}
+
+.weather-icon.cloudy .sun-part {
+    display: none;
+}
+
+.weather-icon.cloudy .cloud-part {
+    width: 50px;
+    height: 30px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.weather-icon.rainy .cloud-part {
+    background: rgba(150, 150, 150, 0.9);
+}
+
+.weather-icon.rainy .cloud-part::before,
+.weather-icon.rainy .cloud-part::after {
+    background: rgba(150, 150, 150, 0.9);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
     .weather-container {
         padding: 20px;
         margin: 10px;
     }
     
-    #currentTemp {
+    #currentTemp, #dayDetailTemp {
         font-size: 60px;
     }
     
@@ -374,7 +525,16 @@ body {
         font-size: 24px;
     }
 
+    .day-details-section {
+        padding: 20px;
+    }
 
+    .detail-item {
+        padding: 10px 0;
+    }
+}
+
+/* Loading and Animation States */
 .loading {
     opacity: 0.5;
     pointer-events: none;
@@ -385,6 +545,70 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* Slide transitions */
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Enhanced forecast grid for different day counts */
+.forecast-section.days-5 {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.forecast-section.days-5 .forecast-day {
+    padding: 15px 8px;
+}
+
+.forecast-section.days-7 {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 8px;
+}
+
+.forecast-section.days-7 .forecast-day {
+    padding: 12px 6px;
+}
+
+.forecast-section.days-7 .forecast-temp {
+    font-size: 20px;
+}
+
+.forecast-section.days-7 .forecast-icon {
+    font-size: 28px;
 }

@@ -2,23 +2,25 @@
 let weatherData = null;
 let currentCity = 'Motihari';
 let currentDays = 3;
+let selectedDayData = null;
 
 // Weather condition mappings
 const weatherConditions = {
-    'clear': { icon: '☀️', emoji: '☀️' },
-    'sunny': { icon: '☀️', emoji: '☀️' },
-    'partly cloudy': { icon: '⛅', emoji: '⛅' },
-    'cloudy': { icon: '☁️', emoji: '☁️' },
-    'overcast': { icon: '☁️', emoji: '☁️' },
-    'rain': { icon: '🌧️', emoji: '🌧️' },
-    'light rain': { icon: '🌦️', emoji: '🌦️' },
-    'heavy rain': { icon: '🌧️', emoji: '🌧️' },
-    'patchy rain nearby': { icon: '🌦️', emoji: '🌦️' },
-    'thunderstorm': { icon: '⛈️', emoji: '⛈️' },
-    'snow': { icon: '❄️', emoji: '❄️' },
-    'fog': { icon: '🌫️', emoji: '🌫️' },
-    'mist': { icon: '🌫️', emoji: '🌫️' },
-    'default': { icon: '☀️', emoji: '☀️' }
+    'clear': { icon: '☀️', emoji: '☀️', class: 'sunny' },
+    'sunny': { icon: '☀️', emoji: '☀️', class: 'sunny' },
+    'partly cloudy': { icon: '⛅', emoji: '⛅', class: 'partly-cloudy' },
+    'cloudy': { icon: '☁️', emoji: '☁️', class: 'cloudy' },
+    'overcast': { icon: '☁️', emoji: '☁️', class: 'cloudy' },
+    'rain': { icon: '🌧️', emoji: '🌧️', class: 'rainy' },
+    'light rain': { icon: '🌦️', emoji: '🌦️', class: 'rainy' },
+    'heavy rain': { icon: '🌧️', emoji: '🌧️', class: 'rainy' },
+    'moderate or heavy rain with thunder': { icon: '⛈️', emoji: '⛈️', class: 'rainy' },
+    'patchy rain nearby': { icon: '🌦️', emoji: '🌦️', class: 'rainy' },
+    'thunderstorm': { icon: '⛈️', emoji: '⛈️', class: 'rainy' },
+    'snow': { icon: '❄️', emoji: '❄️', class: 'snowy' },
+    'fog': { icon: '🌫️', emoji: '🌫️', class: 'foggy' },
+    'mist': { icon: '🌫️', emoji: '🌫️', class: 'foggy' },
+    'default': { icon: '☀️', emoji: '☀️', class: 'sunny' }
 };
 
 // Utility functions
@@ -47,6 +49,16 @@ function formatDate(dateStr) {
     }
 }
 
+function formatFullDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
 function getCurrentDateTime() {
     const now = new Date();
     const options = { 
@@ -57,7 +69,7 @@ function getCurrentDateTime() {
         minute: '2-digit',
         hour12: false
     };
-    return now.toLocaleDateString('en-US', options);
+    return now.toLocaleDateString('en-US', options).replace(',', ' at');
 }
 
 // API call function
@@ -86,7 +98,7 @@ async function fetchWeatherData(city, days) {
         
         // Reset button state
         getWeatherBtn.disabled = false;
-        getWeatherBtn.textContent = 'Get Weather';
+        getWeatherBtn.textContent = 'GET WEATHER';
         
     } catch (error) {
         console.error('Error fetching weather data:', error);
@@ -107,7 +119,7 @@ async function fetchWeatherData(city, days) {
         
         // Reset button state
         getWeatherBtn.disabled = false;
-        getWeatherBtn.textContent = 'Get Weather';
+        getWeatherBtn.textContent = 'GET WEATHER';
     }
 }
 
@@ -115,19 +127,23 @@ async function fetchWeatherData(city, days) {
 function showWeatherContent() {
     const inputSection = document.getElementById('inputSection');
     const weatherContent = document.getElementById('weatherContent');
+    const dayDetailView = document.getElementById('dayDetailView');
     
     inputSection.style.display = 'none';
     weatherContent.style.display = 'block';
+    dayDetailView.style.display = 'none';
     weatherContent.classList.add('fade-in');
 }
 
 function showInputForm() {
     const inputSection = document.getElementById('inputSection');
     const weatherContent = document.getElementById('weatherContent');
+    const dayDetailView = document.getElementById('dayDetailView');
     const cityInput = document.getElementById('cityInput');
     const daysInput = document.getElementById('daysInput');
     
     weatherContent.style.display = 'none';
+    dayDetailView.style.display = 'none';
     inputSection.style.display = 'flex';
     inputSection.classList.add('fade-in');
     
@@ -136,6 +152,35 @@ function showInputForm() {
         cityInput.value = currentCity;
     }
     daysInput.value = currentDays;
+    
+    // Focus on city input
+    setTimeout(() => cityInput.focus(), 100);
+}
+
+function showDayDetailView(dayData, index) {
+    const weatherContent = document.getElementById('weatherContent');
+    const dayDetailView = document.getElementById('dayDetailView');
+    
+    selectedDayData = dayData;
+    
+    // Hide main weather content and show day detail
+    weatherContent.style.display = 'none';
+    dayDetailView.style.display = 'block';
+    dayDetailView.classList.add('slide-in-right');
+    
+    // Update day detail view with data
+    updateDayDetailView(dayData, index);
+}
+
+function hideDayDetailView() {
+    const weatherContent = document.getElementById('weatherContent');
+    const dayDetailView = document.getElementById('dayDetailView');
+    
+    dayDetailView.style.display = 'none';
+    weatherContent.style.display = 'block';
+    weatherContent.classList.add('slide-in-left');
+    
+    selectedDayData = null;
 }
 
 // Update UI with weather data
@@ -167,7 +212,7 @@ function updateUI(data) {
     
     // Update weather icon
     const iconData = getWeatherIcon(weatherResponse.condition);
-    weatherIcon.innerHTML = iconData.icon;
+    weatherIcon.className = `weather-icon ${iconData.class}`;
     
     // Update date and time
     dateTime.textContent = getCurrentDateTime();
@@ -175,10 +220,54 @@ function updateUI(data) {
     // Update forecast
     updateForecast(daysData);
     
-    // Add some sample values for humidity, wind, etc.
+    // Keep some sample values for humidity, wind, etc. (you can enhance this with real data)
     humidity.textContent = '65%';
     windSpeed.textContent = '15 km/h';
     windDirection.textContent = 'South-East';
+}
+
+// Update day detail view
+function updateDayDetailView(dayData, index) {
+    const dayDetailCityName = document.getElementById('dayDetailCityName');
+    const dayDetailTemp = document.getElementById('dayDetailTemp');
+    const dayDetailMaxTemp = document.getElementById('dayDetailMaxTemp');
+    const dayDetailMinTemp = document.getElementById('dayDetailMinTemp');
+    const dayDetailCondition = document.getElementById('dayDetailCondition');
+    const dayDetailDateTime = document.getElementById('dayDetailDateTime');
+    const dayDetailWeatherIcon = document.getElementById('dayDetailWeatherIcon');
+    const dayDetailsTitle = document.getElementById('dayDetailsTitle');
+    const detailMaxTemp = document.getElementById('detailMaxTemp');
+    const detailMinTemp = document.getElementById('detailMinTemp');
+    const detailAvgTemp = document.getElementById('detailAvgTemp');
+    const detailSunrise = document.getElementById('detailSunrise');
+    const detailSunset = document.getElementById('detailSunset');
+    
+    // Get day name and full date
+    const dayName = formatDate(dayData.date);
+    const fullDate = formatFullDate(dayData.date);
+    
+    // Determine weather condition (use current weather condition as base)
+    const condition = weatherData?.weatherResponse?.condition || 'Partly Cloudy';
+    const iconData = getWeatherIcon(condition);
+    
+    // Update basic info
+    dayDetailCityName.textContent = weatherData?.weatherResponse?.city || currentCity;
+    dayDetailTemp.textContent = `${Math.round(dayData.avgTemp)}°`;
+    dayDetailMaxTemp.textContent = `${Math.round(dayData.maxTemp)}°`;
+    dayDetailMinTemp.textContent = `${Math.round(dayData.minTemp)}°`;
+    dayDetailCondition.textContent = condition;
+    dayDetailDateTime.textContent = `${dayName}, ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+    
+    // Update weather icon
+    dayDetailWeatherIcon.className = `weather-icon ${iconData.class}`;
+    
+    // Update detailed information
+    dayDetailsTitle.textContent = `${dayName} - ${fullDate}`;
+    detailMaxTemp.textContent = `${dayData.maxTemp}°C`;
+    detailMinTemp.textContent = `${dayData.minTemp}°C`;
+    detailAvgTemp.textContent = `${dayData.avgTemp}°C`;
+    detailSunrise.textContent = dayData.sunrise;
+    detailSunset.textContent = dayData.sunset;
 }
 
 // Update forecast section
@@ -187,6 +276,14 @@ function updateForecast(daysData) {
     
     // Clear existing forecast
     forecastSection.innerHTML = '';
+    
+    // Add appropriate class based on number of days
+    forecastSection.className = 'forecast-section';
+    if (daysData.length === 5) {
+        forecastSection.classList.add('days-5');
+    } else if (daysData.length >= 7) {
+        forecastSection.classList.add('days-7');
+    }
     
     // Create forecast cards dynamically based on the number of days
     daysData.forEach((day, index) => {
@@ -216,76 +313,10 @@ function updateForecast(daysData) {
         `;
         
         // Add click event for detailed view
-        forecastCard.onclick = () => showDayDetails(day, index);
+        forecastCard.onclick = () => showDayDetailView(day, index);
         
         forecastSection.appendChild(forecastCard);
     });
-    
-    // Adjust grid layout based on number of days
-    const numDays = daysData.length;
-    if (numDays <= 3) {
-        forecastSection.style.gridTemplateColumns = 'repeat(3, 1fr)';
-    } else if (numDays <= 5) {
-        forecastSection.style.gridTemplateColumns = 'repeat(5, 1fr)';
-    } else {
-        forecastSection.style.gridTemplateColumns = 'repeat(auto-fit, minmax(80px, 1fr))';
-    }
-}
-
-// Show detailed day information in modal
-function showDayDetails(dayData, index) {
-    const modal = document.getElementById('weatherModal');
-    const modalDayTitle = document.getElementById('modalDayTitle');
-    const modalWeatherIcon = document.getElementById('modalWeatherIcon');
-    const modalMaxTemp = document.getElementById('modalMaxTemp');
-    const modalMinTemp = document.getElementById('modalMinTemp');
-    const modalAvgTemp = document.getElementById('modalAvgTemp');
-    const modalSunrise = document.getElementById('modalSunrise');
-    const modalSunset = document.getElementById('modalSunset');
-    
-    const dayName = formatDate(dayData.date);
-    const fullDate = new Date(dayData.date).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    
-    // Determine weather condition for icon
-    let condition = 'sunny';
-    if (dayData.avgTemp < 20) {
-        condition = 'cloudy';
-    } else if (dayData.avgTemp < 25) {
-        condition = 'partly cloudy';
-    } else if (index % 3 === 2) {
-        condition = 'light rain';
-    }
-    
-    const iconData = getWeatherIcon(condition);
-    
-    // Populate modal content
-    modalDayTitle.textContent = `${dayName} - ${fullDate}`;
-    modalWeatherIcon.textContent = iconData.emoji;
-    modalMaxTemp.textContent = `${dayData.maxTemp}°C`;
-    modalMinTemp.textContent = `${dayData.minTemp}°C`;
-    modalAvgTemp.textContent = `${dayData.avgTemp}°C`;
-    modalSunrise.textContent = dayData.sunrise;
-    modalSunset.textContent = dayData.sunset;
-    
-    // Show modal with animation
-    modal.style.display = 'flex';
-    setTimeout(() => {
-        modal.classList.add('show');
-    }, 10);
-}
-
-// Close modal function
-function closeModal() {
-    const modal = document.getElementById('weatherModal');
-    modal.classList.remove('show');
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 300);
 }
 
 // Error handling
@@ -351,10 +382,9 @@ function setupEventListeners() {
     const getWeatherBtn = document.getElementById('getWeatherBtn');
     const cityInput = document.getElementById('cityInput');
     const backBtn = document.getElementById('backBtn');
+    const dayDetailBackBtn = document.getElementById('dayDetailBackBtn');
     const settingsIcon = document.querySelector('.settings-icon');
     const weatherContent = document.getElementById('weatherContent');
-    const modalClose = document.getElementById('modalClose');
-    const modal = document.getElementById('weatherModal');
     
     // Get weather button
     getWeatherBtn.addEventListener('click', () => {
@@ -377,9 +407,14 @@ function setupEventListeners() {
         }
     });
 
-    // Back button event
+    // Back button event (from main weather to input)
     backBtn.addEventListener('click', () => {
         showInputForm();
+    });
+
+    // Day detail back button event (from day detail to main weather)
+    dayDetailBackBtn.addEventListener('click', () => {
+        hideDayDetailView();
     });
 
     // Settings click handler
@@ -387,26 +422,17 @@ function setupEventListeners() {
         showInputForm();
     });
 
-    // Modal close events
-    modalClose.addEventListener('click', closeModal);
-    
-    // Close modal when clicking on overlay
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (modal.classList.contains('show')) {
-                closeModal();
+            const dayDetailView = document.getElementById('dayDetailView');
+            if (dayDetailView.style.display !== 'none') {
+                hideDayDetailView();
             } else if (weatherContent.style.display !== 'none') {
                 showInputForm();
             }
         } else if (e.key === 'r' || e.key === 'R') {
-            if (weatherContent.style.display !== 'none' && currentCity && !modal.classList.contains('show')) {
+            if (weatherContent.style.display !== 'none' && currentCity) {
                 fetchWeatherData(currentCity, currentDays);
             }
         }
@@ -414,7 +440,7 @@ function setupEventListeners() {
 
     // Weather container double-click to refresh
     weatherContent.addEventListener('dblclick', () => {
-        if (currentCity && !modal.classList.contains('show')) {
+        if (currentCity) {
             fetchWeatherData(currentCity, currentDays);
         }
     });
@@ -423,11 +449,13 @@ function setupEventListeners() {
 // Setup update intervals
 function setupIntervals() {
     const weatherContent = document.getElementById('weatherContent');
+    const dayDetailView = document.getElementById('dayDetailView');
     const dateTime = document.getElementById('dateTime');
+    const dayDetailDateTime = document.getElementById('dayDetailDateTime');
     
     // Refresh data every 10 minutes (only when weather is shown)
     setInterval(() => {
-        if (weatherData?.weatherResponse?.city && weatherContent.style.display !== 'none') {
+        if (weatherData?.weatherResponse?.city && (weatherContent.style.display !== 'none' || dayDetailView.style.display !== 'none')) {
             fetchWeatherData(currentCity, currentDays);
         }
     }, 10 * 60 * 1000);
@@ -436,6 +464,10 @@ function setupIntervals() {
     setInterval(() => {
         if (weatherContent.style.display !== 'none' && dateTime) {
             dateTime.textContent = getCurrentDateTime();
+        }
+        if (dayDetailView.style.display !== 'none' && dayDetailDateTime && selectedDayData) {
+            const dayName = formatDate(selectedDayData.date);
+            dayDetailDateTime.textContent = `${dayName}, ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
         }
     }, 60000);
 }
@@ -449,12 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Start with input form
     showInputForm();
-    
-    // Focus on city input
-    const cityInput = document.getElementById('cityInput');
-    if (cityInput) {
-        cityInput.focus();
-    }
     
     // Setup intervals for updates
     setupIntervals();
